@@ -219,6 +219,17 @@ def handle_message(event):
                 if float(getstock) == float(price):
                     content += "\n符合" + getstock +" = " + price + "的篩選條件"
                     line_bot_api.push_message(userID, TextSendMessage(text = content))
+    def job():
+        print('HH')
+        dataList = cache_user_stock()
+        for i in range(len(dataList)):
+            for k in range(len(dataList[i])):
+                look_stock_price(dataList[i][k]['favorite_stock'], dataList[i][k]['condition'], dataList[i][k]['price'], dataList[i][k]['userID'])
+    schedule.every(10).seconds.do(job).tag('daily-task-stock' + uid, 'second')
+
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
 ######################### 匯率區 ######################
     if re.match('幣別種類',msg):
         message = Msg_Template.show_Button()
