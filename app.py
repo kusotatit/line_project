@@ -11,8 +11,19 @@ import datetime
 import Msg_Template
 import EXRate
 import mongodb
+import twder
 
 app = Flask(__name__)
+
+def cache_user_stock():
+    db = mongodb.constructor_stock()
+    nameList = db.list_collection_names()
+    users = []
+    for i in range(len(nameList)):
+        collect = db[nameList[i]]
+        cel = list(collect.find({"tag":'stock'}))
+        users.append(cel)
+    return users
 
 def oil_price():
     target_url = 'https://gas.goodlife.tw/'
@@ -179,6 +190,35 @@ def handle_message(event):
             event.reply_token,
             TextSendMessage(text = content)
         )
+######################### 股票提醒區 ######################
+    if re.match("關閉提醒",msg):
+        import schedule
+        schedule.clear()
+    if re.match("股價提醒",msg):
+        import schedule
+        import time
+        def look_stock_price(stock, condition, price, userID):
+            print(userID)
+            url = 'https://tw.stock.yahoo.com/q/q?s=' + stock
+            list_req = requests.get(url)
+            soup = BeautifulSoup(list_req.content,"html.parser")
+            getstock = soup.find('span',class_ = 'Fz(32px)').string
+            content = stock + "當前股市價格為: " + getstock
+            if condition == '<':
+                content += "\n篩選條件為: < " + price
+                if float(getstock) < float(price):
+                    content += "\n符合" + getstock +" < " + price + "的篩選條件"
+                    line_bot_api.push_message(userID, TextSendMessage(text = content))
+            elif condition == '>':
+                content += "\n篩選條件為: >" + price
+                if float(getstock) > float(price):
+                    content += "\n符合" + getstock +" > " + price + "的篩選條件"
+                    line_bot_api.push_message(userID, TextSendMessage(text = content))
+            elif condition == '=':
+                content += "\n篩選條件為: >" + price
+                if float(getstock) == float(price):
+                    content += "\n符合" + getstock +" = " + price + "的篩選條件"
+                    line_bot_api.push_message(userID, TextSendMessage(text = content))
 ######################### 匯率區 ######################
     if re.match('幣別種類',msg):
         message = Msg_Template.show_Button()
