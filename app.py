@@ -12,6 +12,8 @@ import Msg_Template
 import EXRate
 import mongodb
 import twder
+import schedule
+
 
 app = Flask(__name__)
 
