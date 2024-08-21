@@ -49,10 +49,8 @@ def stock_reply_other():
                         label="💜股價K線圖💜",
                         text="@K股票代號日期區間->@K23302024-0101",
                     )
-                )
-            ]
-        )
-    )
+                )]
+        ))
     return text_message
 
 # 幣別種類Button
