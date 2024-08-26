@@ -17,9 +17,11 @@ import twder
 import yfinance as yf
 import mplfinance as mpf
 import pyimgur
+import json, requests,time
 
 app = Flask(__name__)
 IMGUR_CLIENT_ID = '426d0eba6e02b5f'
+access_token = 'DCk2pZiR/+/DqU24Sq2Emn/0d0ofkpH+UiQ4dQ4wFPrx40xLcdRd4fd9GiEfdTM1pOlmAGnLs6deQ8IFx0fy3Q1Jv0Dkqa1dtzCbOneSH8g38+EN3vadpe+jMz4QM9ttjAUmCyWqw9z6C6fYOVf+aQdB04t89/1O/w1cDnyilFU='
 
 def plot_stock_k_chart(IMGUR_CLIENT_ID, stock = "0050",date_from='2020-01-01'):
     stock = str(stock) + ".TW"
@@ -42,6 +44,19 @@ def plot_stock_k_chart(IMGUR_CLIENT_ID, stock = "0050",date_from='2020-01-01'):
     except Exception as e:
         print(f"錯誤:{e}")
         return None
+
+def reply_image(msg, rk, token):
+    headers = {'Authorization':f'Bearer{token}','Content-Type':'application/json'}
+    body = {
+        'replayToken':rk,
+        'messages':[{
+            'type':'image',
+            'originalContentUrl':msg,
+            'previewImgeUrl':msg
+        }]
+    }
+    req = requests.request('POST','https://api.line.me/v2/bot/message/reply',headers=headers,data = json.dumps(body).encode('utf=8'))
+    print(req.text)
 
 # 抓使用者設定它關心的匯率
 def cache_users_currency():
@@ -108,6 +123,15 @@ def callback():
     # handle webhook body
     try:
         handler.handle(body, signature)
+        json_data = json.loads(body)
+        reply_tolen = json_data['events'][0]['replyToken']
+        user_id = json_data['events'][0]['source']['userId']
+        print(json_data)
+        if 'message' in json_data['events'][0]:
+            if json_data['events'][0]['message']['type'] == 'text':
+                text = json_data['event'][0]['message']['text']
+                if text == '雷達回波圖' or text == '雷達回波':
+                    reply_image(f'https://cwbopendata.s3.ap-northeast-1.amazonaws.com/MSC/O-A0058-003.png?{time.time_ns()}',reply_tolen,access_token)
     except InvalidSignatureError:
         abort(400)
 
