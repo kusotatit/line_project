@@ -129,7 +129,7 @@ def callback():
         print(json_data)
         if 'message' in json_data['events'][0]:
             if json_data['events'][0]['message']['type'] == 'text':
-                text = json_data['event'][0]['message']['text']
+                text = json_data['events'][0]['message']['text']
                 if text == '雷達回波圖' or text == '雷達回波':
                     reply_image(f'https://cwbopendata.s3.ap-northeast-1.amazonaws.com/MSC/O-A0058-003.png?{time.time_ns()}',reply_tolen,access_token)
     except InvalidSignatureError:
