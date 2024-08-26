@@ -48,8 +48,8 @@ def plot_stock_k_chart(IMGUR_CLIENT_ID, stock = "0050",date_from='2020-01-01'):
         print(f"錯誤:{e}")
         return None
 
-def reply_image(msg, rk, token):
-    headers = {'Authorization':f'Bearer{token}','Content-Type':'application/json'}
+def reply_image(msg, rk, access_token):
+    headers = {'Authorization':f'Bearer{access_token}','Content-Type':'application/json'}
     body = {
         'replayToken':rk,
         'messages':[{
