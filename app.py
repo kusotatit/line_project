@@ -19,12 +19,26 @@ import mplfinance as mpf
 import pyimgur
 import json, requests,time
 import place
+from tensorflow.keras.models import load_model
+from PIL import Image
+import numpy as np
+import io
 
 mat_d = {}
 
 app = Flask(__name__)
 IMGUR_CLIENT_ID = '426d0eba6e02b5f'
 access_token = 'DCk2pZiR/+/DqU24Sq2Emn/0d0ofkpH+UiQ4dQ4wFPrx40xLcdRd4fd9GiEfdTM1pOlmAGnLs6deQ8IFx0fy3Q1Jv0Dkqa1dtzCbOneSH8g38+EN3vadpe+jMz4QM9ttjAUmCyWqw9z6C6fYOVf+aQdB04t89/1O/w1cDnyilFU='
+model = load_model('mnist_cnn_model.h5')
+
+def preprocess_image(image):
+    image = image.convert('L')
+    image = image.resize((28,28))
+    image = np.array(image)
+    image = image / 255.0
+    image = np.expand_dims(image, axis=0)
+    image = np.expand_dims(image, axis=-1)
+    return image
 
 def plot_stock_k_chart(IMGUR_CLIENT_ID, stock = "0050",date_from='2020-01-01'):
     stock = str(stock) + ".TW"
@@ -126,15 +140,15 @@ def callback():
     # handle webhook body
     try:
         handler.handle(body, signature)
-        json_data = json.loads(body)
-        reply_token = json_data['events'][0]['replyToken']
-        user_id = json_data['events'][0]['source']['userId']
-        print(json_data)
-        if 'message' in json_data['events'][0]:
-            if json_data['events'][0]['message']['type'] == 'text':
-                text = json_data['events'][0]['message']['text']
-                if text == '雷達回波圖' or text == '雷達回波':
-                    reply_image(f'https://cwbopendata.s3.ap-northeast-1.amazonaws.com/MSC/O-A0058-003.png?{time.time_ns()}',reply_token,access_token)
+        # json_data = json.loads(body)
+        # reply_token = json_data['events'][0]['replyToken']
+        # user_id = json_data['events'][0]['source']['userId']
+        # print(json_data)
+        # if 'message' in json_data['events'][0]:
+        #     if json_data['events'][0]['message']['type'] == 'text':
+        #         text = json_data['events'][0]['message']['text']
+        #         if text == '雷達回波圖' or text == '雷達回波':
+        #             reply_image(f'https://cwbopendata.s3.ap-northeast-1.amazonaws.com/MSC/O-A0058-003.png?{time.time_ns()}',reply_token,access_token)
     except InvalidSignatureError:
         abort(400)
 
@@ -474,6 +488,23 @@ def handle_message(event):
         while True: 
             schedule.run_pending()
             time.sleep(1)
+    
+    #*******************************************************************
+    msg = event.message.text
+
+    if re.match('圖像辨識',msg):
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text='請上傳一張圖片進行圖像辨識')
+        )
+    #********************************************************
+    if re.match('雷達回波',msg):
+        url = 'http://www.cwa.gov.tw/Data/radar/CV1_3600.jpg'
+        radar_image = ImageSendMessage(
+            original_content_url=url,
+            preview_image_url= url
+        )
+        line_bot_api.reply_message(event.reply_token,radar_image)
 
     if re.match('最新氣象|查詢天氣|天氣查詢|weather|Weather',msg):
         content = place.img_Carousel()
@@ -486,6 +517,21 @@ def handle_message(event):
         line_bot_api.reply_message(event.reply_token,content)
         return 0
 
+
+@handler.add(MessageEvent, message=ImageMessage)
+def handle_message_message(event):
+    message_content = line_bot_api.get_message_content(event.message.id)
+    image = Image.open(io.BytesIO(message_content.content))
+
+    image = preprocess_image(image)
+
+    prediction = model.predict(image)
+    digit = np.argmax(prediction)
+
+    line_bot_api.reply_message(
+        event.reply_token,
+        TextSendMessage(text=f'預測的數字是:{digit}')
+    )
 
 import os
 if __name__ == "__main__":
