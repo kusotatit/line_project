@@ -499,7 +499,7 @@ def handle_message(event):
         )
     #********************************************************
     if re.match('雷達回波',msg):
-        url = 'http://www.cwa.gov.tw/Data/radar/CV1_3600.jpg'
+        url = 'http://www.cwa.gov.tw/Data/radar/CV1_3600.png'
         radar_image = ImageSendMessage(
             original_content_url=url,
             preview_image_url= url
